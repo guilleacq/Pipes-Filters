@@ -1,6 +1,7 @@
 ﻿using System;
 using CompAndDel.Pipes;
 using CompAndDel.Filters;
+using System.Data.Common;
 
 namespace CompAndDel
 {
@@ -12,19 +13,13 @@ namespace CompAndDel
             PictureProvider provider = new PictureProvider();
             IPicture picture = provider.GetPicture(@"beer.jpg");
 
-            IPicture filteredPicture = Send(picture, new FilterBlurConvolution());
-            provider.SavePicture(picture, SAVED_PICTURE_PATH);
-        }
+            IPipe pipeEnd = new PipeNull();
+            IPipe pipe2 = new PipeSerial(new FilterNegative(), pipeEnd);
+            IPipe pipe1 = new PipeSerial(new FilterBlurConvolution(), pipe2);
 
-        private static IPicture Send(IPicture picture, IFilter filter)
-        {
-            PipeSerial pipeSerial;
-            PipeSerial pipeSerial2;
-            
-            pipeSerial2 = new PipeSerial(filter, null);
-            pipeSerial = new PipeSerial(filter, pipeSerial2);
+            IPicture filteredPicture = pipe1.Send(picture);
 
-            return picture;
+            provider.SavePicture(filteredPicture, SAVED_PICTURE_PATH);
         }
     }
 }
